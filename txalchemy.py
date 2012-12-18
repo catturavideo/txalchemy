@@ -112,9 +112,10 @@ class DB(service.Service):
                 continue
 
             session.commit()
-            # if a Deferred result, chain it to fire in the main thread.
             if isinstance(r, defer.Deferred):
-                reactor.callFromThread(r.chainDeferred, d)
+                # if a Deferred result, chain it to fire in the main thread
+                r.addCallbacks(lambda r: reactor.callFromThread(d.callback, r),
+                               lambda f: reactor.callFromThread(d.errback, f))
             else:
                 reactor.callFromThread(d.callback, r)
         print 'Database thread terminated.'
